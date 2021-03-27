@@ -26,16 +26,25 @@ private slots:
     void portReceive();
     void on_getDataBtn_clicked();
     void on_getTimeBtn_clicked();
-    void on_dateTimeFromMeterBtn_clicked();
     void getTime_timeoutSlot();
     void getData_timeoutSlot();
     void on_qxitBtn_clicked();
+
+    void on_computerDateTimeBtn_clicked();
+
+    void on_setTimeBtn_clicked();
+
+    void on_setDateBtn_clicked();
+
+    void on_setDateTimeBtn_clicked();
 
 private:
     void showStatusMessage(const QString &message);
     void setPort(QSerialPort *port);
     bool openPort();
     void setSlots();
+    double convertFromHexToDouble(int indexNumber);
+    void convertFromHexToTime();
 
     Ui::MainWindow *ui;
     QSerialPort *mainWindowPort;

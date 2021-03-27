@@ -86,7 +86,38 @@ void MainWindow::portReceive()
 void MainWindow::on_getDataBtn_clicked()
 {
     if(!mainWindowPort->isOpen()) return;
-    mainWindowPort->write("get_data\r\n");
+    //mainWindowPort->write("get_data\r\n");
+
+    /*   */
+    symbolsFromPort.clear();
+    symbolsFromPort.append(0x40);
+    symbolsFromPort.append(0x14);
+    symbolsFromPort.append(0x98);
+    symbolsFromPort.append(0x5f);
+    symbolsFromPort.append(0x06);
+    symbolsFromPort.append(0xf6);
+    symbolsFromPort.append(0x94);
+    symbolsFromPort.append(0x46);
+    symbolsFromPort.append(':');
+    symbolsFromPort.append(0x40);
+    symbolsFromPort.append(0x14);
+    symbolsFromPort.append(0x98);
+    symbolsFromPort.append(0x5f);
+    symbolsFromPort.append(0x06);
+    symbolsFromPort.append(0xf6);
+    symbolsFromPort.append(0x94);
+    symbolsFromPort.append(0x46);
+    symbolsFromPort.append(':');
+    symbolsFromPort.append(0x40);
+    symbolsFromPort.append(0x49);
+    symbolsFromPort.append('0');
+    symbolsFromPort.append('0');
+    symbolsFromPort.append(0xfb);
+    symbolsFromPort.append(0xa8);
+    symbolsFromPort.append(0x82);
+    symbolsFromPort.append(0x6b);
+    symbolsFromPort.append(':');
+    /*   */
 
     if(!getData_timer.isActive())
         getData_timer.start(500);
@@ -108,11 +139,59 @@ void MainWindow::on_getTimeBtn_clicked()
 /*
  * Слот кнопки ""
  */
-void MainWindow::on_dateTimeFromMeterBtn_clicked()
+
+void MainWindow::on_computerDateTimeBtn_clicked()
+{
+    ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+}
+
+/*
+ *
+ */
+void MainWindow::on_setTimeBtn_clicked()
 {
     if(!mainWindowPort->isOpen()) return;
-    mainWindowPort->write("getDateTime\r\n");
+
+    QTime time = ui->dateTimeEdit->time();
+
+    uint32_t timeToMeter = 0;
+    timeToMeter += time.hour() * 10000;
+    timeToMeter += time.minute() * 100;
+    timeToMeter += time.second();
+
+    QString message = "set_time:" + QString::number(timeToMeter) + "\r\n";
+    qDebug() << message.toUtf8();
+    mainWindowPort->write(message.toUtf8());
 }
+
+/*
+ *
+ */
+void MainWindow::on_setDateBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QDate date = ui->dateTimeEdit->date();
+
+    uint32_t dateToMeter = 0;
+    dateToMeter += date.day() * 10000;
+    dateToMeter += date.month() * 100;
+    dateToMeter += date.year() % 100;
+
+    QString message = "set_date:" + QString::number(dateToMeter) + "\r\n";
+    qDebug() << message.toUtf8();
+    mainWindowPort->write(message.toUtf8());
+}
+
+/*
+ *
+ */
+void MainWindow::on_setDateTimeBtn_clicked()
+{
+    on_setTimeBtn_clicked();
+    on_setDateBtn_clicked();
+}
+
 
 /*
  * Слот кнопки "Выйти". Происходит открытие окна ввода пароля
@@ -163,17 +242,19 @@ void MainWindow::getData_timeoutSlot()
 {
     getData_timer.stop();
 
-    QString hexDouble;
-    for(int i : symbolsFromPort)
+    int countOfData = 3;
+    double data[countOfData];
+
+    for(int i = 0; i < countOfData; i++)
     {
-        if(i > 0 && i < 10) hexDouble.append('0');
-        hexDouble.append(QString::number(i, 16));
-        qDebug() << i;
+        data[i] = convertFromHexToDouble(i);
     }
-    qDebug() << "summary" << hexDouble;
-    QString message = "value is : ";
-    //...
-    //ui->dataOutput->setText(tr("").arg(message).arg(tmp));
+
+    ui->dataOutput->setText(tr("Pavg = %1 Вт\nQavg = %2 ВА\nF = %3 Гц")
+                            .arg(QString::number(data[0]))
+                            .arg(QString::number(data[1]))
+                            .arg(QString::number(data[2])));
+
     symbolsFromPort.clear();
 }
 
@@ -209,7 +290,7 @@ bool MainWindow::openPort()
 {
     if(!this->mainWindowPort->open(QIODevice::ReadWrite))
     {
-        //exit or msg
+        showStatusMessage(tr("Failed to open port").arg(mainWindowPort->portName()));
         return false;
     }
 
@@ -226,3 +307,41 @@ void MainWindow::setSlots()
     connect(&getData_timer, SIGNAL(timeout()), this, SLOT(getData_timeoutSlot()));
 }
 
+double MainWindow::convertFromHexToDouble(int indexNumber)
+{
+    if(symbolsFromPort.isEmpty()) return 0.0;
+
+    double output = 0.0;
+    std::string hexString;
+    int index = 8 * indexNumber + indexNumber;
+
+    while( symbolsFromPort.at(index) != ':' )
+    {
+        uint8_t temp = symbolsFromPort.at(index);
+
+        if(temp < 10)
+        {
+            hexString += '0';
+        }
+
+        QString tmp = QString::number(temp, 16);
+        hexString += tmp.toStdString();
+
+        index++;
+    }
+
+    index++;
+
+    try{
+        *reinterpret_cast<unsigned long long*>(&output) = std::stoull(hexString, nullptr, 16);
+    }
+    catch(...){
+        qDebug() << "Error with double";
+        showStatusMessage("Error with double");
+        return 0.0;
+    }
+
+    hexString.clear();
+
+    return output;
+}

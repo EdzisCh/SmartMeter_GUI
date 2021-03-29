@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>315</width>
-    <height>355</height>
+    <width>308</width>
+    <height>376</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,8 +25,8 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>311</width>
-      <height>311</height>
+      <width>321</width>
+      <height>331</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -45,7 +45,7 @@
         <x>20</x>
         <y>0</y>
         <width>258</width>
-        <height>254</height>
+        <height>301</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -109,7 +109,7 @@
         <x>0</x>
         <y>4</y>
         <width>301</width>
-        <height>281</height>
+        <height>305</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -138,9 +138,9 @@
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <widget class="QPushButton" name="getTimeBtn">
+              <widget class="QPushButton" name="getTimeDateBtn">
                <property name="text">
-                <string>Получить время   </string>
+                <string>Получить время и дату  </string>
                </property>
               </widget>
              </item>
@@ -279,7 +279,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>315</width>
+     <width>308</width>
      <height>21</height>
     </rect>
    </property>

@@ -25,17 +25,13 @@ public:
 private slots:
     void portReceive();
     void on_getDataBtn_clicked();
-    void on_getTimeBtn_clicked();
+    void on_getTimeDateBtn_clicked();
     void getTime_timeoutSlot();
     void getData_timeoutSlot();
     void on_qxitBtn_clicked();
-
     void on_computerDateTimeBtn_clicked();
-
     void on_setTimeBtn_clicked();
-
     void on_setDateBtn_clicked();
-
     void on_setDateTimeBtn_clicked();
 
 private:

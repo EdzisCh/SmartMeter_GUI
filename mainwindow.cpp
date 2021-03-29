@@ -18,8 +18,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusbar->addWidget(status);
 
     this->setEnabled(false);
-    this->setFixedSize(311, 323);
+    this->setFixedSize(308, 376);
     showStatusMessage("");
+    setWindowTitle("Smart Meter GUI");
+
 }
 
 /*
@@ -73,7 +75,7 @@ bool MainWindow::runMainWindow(QSerialPort *port)
 void MainWindow::portReceive()
 {
     symbolsFromPort.append(mainWindowPort->readAll());
-    qDebug() << "[]" << symbolsFromPort;
+
     if(!symbolsFromPort.contains("\r\n")) return;
 
     int end = symbolsFromPort.lastIndexOf("\r\n");
@@ -86,47 +88,16 @@ void MainWindow::portReceive()
 void MainWindow::on_getDataBtn_clicked()
 {
     if(!mainWindowPort->isOpen()) return;
-    //mainWindowPort->write("get_data\r\n");
-
-    /*   */
-    symbolsFromPort.clear();
-    symbolsFromPort.append(0x40);
-    symbolsFromPort.append(0x14);
-    symbolsFromPort.append(0x98);
-    symbolsFromPort.append(0x5f);
-    symbolsFromPort.append(0x06);
-    symbolsFromPort.append(0xf6);
-    symbolsFromPort.append(0x94);
-    symbolsFromPort.append(0x46);
-    symbolsFromPort.append(':');
-    symbolsFromPort.append(0x40);
-    symbolsFromPort.append(0x14);
-    symbolsFromPort.append(0x98);
-    symbolsFromPort.append(0x5f);
-    symbolsFromPort.append(0x06);
-    symbolsFromPort.append(0xf6);
-    symbolsFromPort.append(0x94);
-    symbolsFromPort.append(0x46);
-    symbolsFromPort.append(':');
-    symbolsFromPort.append(0x40);
-    symbolsFromPort.append(0x49);
-    symbolsFromPort.append('0');
-    symbolsFromPort.append('0');
-    symbolsFromPort.append(0xfb);
-    symbolsFromPort.append(0xa8);
-    symbolsFromPort.append(0x82);
-    symbolsFromPort.append(0x6b);
-    symbolsFromPort.append(':');
-    /*   */
+    mainWindowPort->write("get_data\r\n");
 
     if(!getData_timer.isActive())
-        getData_timer.start(500);
+        getData_timer.start(2000);
 }
 
 /*
- * Слот кнопки "Получить время"
+ * Слот кнопки "Получить время и дату"
  */
-void MainWindow::on_getTimeBtn_clicked()
+void MainWindow::on_getTimeDateBtn_clicked()
 {
     if(!mainWindowPort->isOpen()) return;
 
@@ -160,7 +131,7 @@ void MainWindow::on_setTimeBtn_clicked()
     timeToMeter += time.second();
 
     QString message = "set_time:" + QString::number(timeToMeter) + "\r\n";
-    qDebug() << message.toUtf8();
+
     mainWindowPort->write(message.toUtf8());
 }
 
@@ -179,7 +150,7 @@ void MainWindow::on_setDateBtn_clicked()
     dateToMeter += date.year() % 100;
 
     QString message = "set_date:" + QString::number(dateToMeter) + "\r\n";
-    qDebug() << message.toUtf8();
+
     mainWindowPort->write(message.toUtf8());
 }
 
@@ -213,8 +184,9 @@ void MainWindow::getTime_timeoutSlot()
 {
     getTime_timer.stop();
 
-    QString message = "Current time in meter is ";
+    QString message = "Current time: ";
     QString timeString = "";
+    QString dateString = "";
 
     for(int i = 0; i < 3; i++)
     {
@@ -229,10 +201,30 @@ void MainWindow::getTime_timeoutSlot()
         if (i != 2) message += ':';
         timeString += tmp;
     }
+
+    message += " and date: ";
+
+    for(int i = 3; i < 6; i++)
+    {
+        int temp = symbolsFromPort.at(i);
+
+        if(temp < 10)
+        {
+            message += '0';
+            dateString += '0';
+        }
+        QString tmp = QString::number(temp, 10);
+        message += tmp;
+        if (i != 5) message += '.';
+        if (i == 5) dateString += "20";
+        dateString += tmp;
+    }
+
     ui->dateTimeEdit->setTime(QTime::fromString(timeString, "hhmmss"));
+    ui->dateTimeEdit->setDate(QDate::fromString(dateString, "ddMMyyyy"));
     symbolsFromPort.clear();
 
-    ui->dataOutput->setText(message);
+    showStatusMessage(message);
 }
 
 /*
@@ -242,7 +234,7 @@ void MainWindow::getData_timeoutSlot()
 {
     getData_timer.stop();
 
-    int countOfData = 3;
+    int countOfData = 6;
     double data[countOfData];
 
     for(int i = 0; i < countOfData; i++)
@@ -250,12 +242,13 @@ void MainWindow::getData_timeoutSlot()
         data[i] = convertFromHexToDouble(i);
     }
 
-    ui->dataOutput->setText(tr("Pavg = %1 Вт\nQavg = %2 ВА\nF = %3 Гц")
+    ui->dataOutput->setText(tr("Pavg = %1 Вт\nQavg = %2 ВА\nF = %3 Гц\nI = %4 A\nU = %5 B\nCos = %6")
                             .arg(QString::number(data[0]))
                             .arg(QString::number(data[1]))
-                            .arg(QString::number(data[2])));
-
-    symbolsFromPort.clear();
+                            .arg(QString::number(data[2]))
+                            .arg(QString::number(data[3]))
+                            .arg(QString::number(data[4]))
+                            .arg(QString::number(data[5])));
 }
 
 //==================================================================
@@ -313,7 +306,7 @@ double MainWindow::convertFromHexToDouble(int indexNumber)
 
     double output = 0.0;
     std::string hexString;
-    int index = 8 * indexNumber + indexNumber;
+    int index = 8 * indexNumber + indexNumber + 7;
 
     while( symbolsFromPort.at(index) != ':' )
     {
@@ -327,16 +320,15 @@ double MainWindow::convertFromHexToDouble(int indexNumber)
         QString tmp = QString::number(temp, 16);
         hexString += tmp.toStdString();
 
-        index++;
+        index--;
+        if(index == -1) break;
     }
-
-    index++;
 
     try{
         *reinterpret_cast<unsigned long long*>(&output) = std::stoull(hexString, nullptr, 16);
     }
     catch(...){
-        qDebug() << "Error with double";
+
         showStatusMessage("Error with double");
         return 0.0;
     }

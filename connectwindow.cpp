@@ -3,6 +3,8 @@
 #include <QSerialPortInfo>
 #include <QThread>
 #include "mainwindow.h"
+#include <QMessageBox>
+#include <QCloseEvent>
 
 /*
  * Конструктор класса ввода пароля
@@ -38,6 +40,7 @@ ConnectWindow::ConnectWindow(QWidget *parent) :
     ui->password->setEnabled(false);
     ui->logInBtn->setEnabled(false);
     ui->connectBtn->setFocus();
+    setWindowTitle("Connect");
     connect(port, SIGNAL(readyRead()), this, SLOT(portReceive()));
     connect(&timer, SIGNAL(timeout()), this, SLOT(timeoutHandle()));
     showMessage("");
@@ -163,6 +166,25 @@ void ConnectWindow::timeoutHandle()
 void ConnectWindow::on_password_returnPressed()
 {
     on_logInBtn_clicked();
+}
+
+/*
+ */
+void ConnectWindow::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    if (QMessageBox::Yes == QMessageBox::question(this, "Закрыть?",
+                          "Уверены?",
+                          QMessageBox::Yes|QMessageBox::No))
+    {
+        event->accept();
+
+        if(port->isOpen())
+            port->close();
+
+        static_cast<MainWindow *>(this->parent())->close();
+    }
+
 }
 
 //==================================================================

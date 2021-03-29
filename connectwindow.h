@@ -27,6 +27,7 @@ private slots:
     void on_logInBtn_clicked();
     void timeoutHandle();
     void on_password_returnPressed();
+    void closeEvent(QCloseEvent *event);
 
 private:
     void showMessage(const QString &message);

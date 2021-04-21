@@ -3,6 +3,8 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QDebug>
+#include <QMessageBox>
+#include <QThread>
 
 /*
  * Конструктор класса
@@ -18,10 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusbar->addWidget(status);
 
     this->setEnabled(false);
-    this->setFixedSize(308, 376);
+    this->setFixedSize(313, 412);
     showStatusMessage("");
     setWindowTitle("Smart Meter GUI");
-
 }
 
 /*
@@ -29,9 +30,9 @@ MainWindow::MainWindow(QWidget *parent)
  */
 MainWindow::~MainWindow()
 {
-    if(mainWindowPort->isOpen())
-        mainWindowPort->close();
+    mainWindowPort->close();
     connectWindow->~ConnectWindow();
+
     delete ui;
 }
 
@@ -51,7 +52,7 @@ void MainWindow::showConnectionWgt()
  * Проходит проверку на открытие порта, если false -> возврат
  * к окну ввода пароля
  */
-bool MainWindow::runMainWindow(QSerialPort *port)
+bool MainWindow::runMainWindow(QSerialPort *port, uint8_t passType)
 {
     setPort(port);
     if(!openPort())
@@ -62,6 +63,7 @@ bool MainWindow::runMainWindow(QSerialPort *port)
 
     setSlots();
     setEnabled(true);
+    setPassType(passType);
     this->show();
     return true;
 
@@ -83,6 +85,26 @@ void MainWindow::portReceive()
 }
 
 /*
+ */
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (QMessageBox::Yes == QMessageBox::question(this, "Закрытие",
+                          "Завершить работу?",
+                          QMessageBox::Yes|QMessageBox::No))
+    {
+        if(this->mainWindowPort->isOpen())
+        {
+            QByteArray byteData;
+            byteData.append("end_connection\r\n");
+            this->mainWindowPort->write(byteData);
+        }
+
+        event->accept();
+    }
+
+}
+
+/*
  * Слот нажатия кнопки "Получить данные"
  */
 void MainWindow::on_getDataBtn_clicked()
@@ -90,8 +112,9 @@ void MainWindow::on_getDataBtn_clicked()
     if(!mainWindowPort->isOpen()) return;
     mainWindowPort->write("get_data\r\n");
 
+    waitForCmdTransmit(false);
     if(!getData_timer.isActive())
-        getData_timer.start(2000);
+        getData_timer.start(3000);
 }
 
 /*
@@ -103,6 +126,7 @@ void MainWindow::on_getTimeDateBtn_clicked()
 
     mainWindowPort->write("get_time\r\n");
 
+    waitForCmdTransmit(false);
     if(!getTime_timer.isActive())
         getTime_timer.start(500);
 }
@@ -132,6 +156,7 @@ void MainWindow::on_setTimeBtn_clicked()
 
     QString message = "set_time:" + QString::number(timeToMeter) + "\r\n";
 
+    waitForCmdTransmit(true);
     mainWindowPort->write(message.toUtf8());
 }
 
@@ -151,18 +176,9 @@ void MainWindow::on_setDateBtn_clicked()
 
     QString message = "set_date:" + QString::number(dateToMeter) + "\r\n";
 
+    waitForCmdTransmit(true);
     mainWindowPort->write(message.toUtf8());
 }
-
-/*
- *
- */
-void MainWindow::on_setDateTimeBtn_clicked()
-{
-    on_setTimeBtn_clicked();
-    on_setDateBtn_clicked();
-}
-
 
 /*
  * Слот кнопки "Выйти". Происходит открытие окна ввода пароля
@@ -176,6 +192,142 @@ void MainWindow::on_qxitBtn_clicked()
     connectWindow->show();
 }
 
+/*
+ *
+ */
+void MainWindow::on_resetMeterBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "reset_meters\r\n";
+
+    waitForCmdTransmit(true, 2000);
+    mainWindowPort->write(message.toUtf8());
+}
+
+/*
+ *
+ */
+void MainWindow::on_getSettingsBtn_clicked()
+{
+
+}
+
+
+/*
+ * Включение сезонного времени
+ */
+void MainWindow::on_onOffDaylightSavingBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "set_daylight:1\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+}
+
+/*
+ * Переход на зимнее время
+ */
+void MainWindow::on_changeToWinterBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "change_daylight:1\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+}
+
+/*
+ * Переход на летнее время
+ */
+void MainWindow::on_changeToSummerBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "change_daylight:2\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+}
+
+/*
+ *
+ */
+void MainWindow::on_calibrateBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "calibrate\r\n";
+
+    waitForCmdTransmit(false);
+    mainWindowPort->write(message.toUtf8());
+    calibration_timer.start(10000);
+}
+
+/*
+ */
+void MainWindow::on_setFirstBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+    QString pass = ui->firstPassInput->text();
+    if(pass.isEmpty())
+    {
+        showStatusMessage("Введите пароль");
+        return;
+    } else if(pass.size() <= 3)
+    {
+        showStatusMessage("Введите нормальный пароль)");
+        return;
+    }
+
+    //обоработка пароля
+
+    QString message = "set_first_pass:" + QString::number(123) + "\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+    waitForCmdTransmit(true);
+}
+
+/*
+ *
+ */
+void MainWindow::on_setSecondPassBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+    QString pass = ui->secondPassInput->text();
+    if(pass.isEmpty())
+    {
+        showStatusMessage("Введите пароль");
+        return;
+    } else if(pass.size() <= 3)
+    {
+        showStatusMessage("Введите нормальный пароль)");
+        return;
+    }
+
+    //обоработка пароля
+
+    QString message = "set_second_pass:" + QString::number(123) + "\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+    waitForCmdTransmit(true);
+}
+
+/*
+ *
+ */
+void MainWindow::on_getEventDataBtn_clicked()
+{
+    if(!mainWindowPort->isOpen()) return;
+
+    QString message = "get_event_notes\r\n";
+
+    mainWindowPort->write(message.toUtf8());
+
+    getEvents_timer.start(1000);
+}
+
+//============================================================
 
 /*
  * Слот таймера
@@ -184,7 +336,7 @@ void MainWindow::getTime_timeoutSlot()
 {
     getTime_timer.stop();
 
-    QString message = "Current time: ";
+    QString message = "Время счетчика: ";
     QString timeString = "";
     QString dateString = "";
 
@@ -202,7 +354,7 @@ void MainWindow::getTime_timeoutSlot()
         timeString += tmp;
     }
 
-    message += " and date: ";
+    message += " и дата: ";
 
     for(int i = 3; i < 6; i++)
     {
@@ -224,6 +376,7 @@ void MainWindow::getTime_timeoutSlot()
     ui->dateTimeEdit->setDate(QDate::fromString(dateString, "ddMMyyyy"));
     symbolsFromPort.clear();
 
+    stopWaitingCmdTransmit();
     showStatusMessage(message);
 }
 
@@ -234,21 +387,118 @@ void MainWindow::getData_timeoutSlot()
 {
     getData_timer.stop();
 
-    int countOfData = 6;
+    int countOfData = 18;
     double data[countOfData];
 
     for(int i = 0; i < countOfData; i++)
     {
         data[i] = convertFromHexToDouble(i);
+        qDebug() << i << " " << data[i];
     }
 
-    ui->dataOutput->setText(tr("Pavg = %1 Вт\nQavg = %2 ВА\nF = %3 Гц\nI = %4 A\nU = %5 B\nCos = %6")
+    ui->dataOutput->setText(tr(dataField.toLatin1())
                             .arg(QString::number(data[0]))
                             .arg(QString::number(data[1]))
                             .arg(QString::number(data[2]))
                             .arg(QString::number(data[3]))
                             .arg(QString::number(data[4]))
-                            .arg(QString::number(data[5])));
+                            .arg(QString::number(data[5]))
+                            .arg(QString::number(data[6]))
+                            .arg(QString::number(data[7]))
+                            .arg(QString::number(data[8]))
+                            .arg(QString::number(data[9]))
+                            .arg(QString::number(data[10]))
+                            .arg(QString::number(data[11]))
+                            .arg(QString::number(data[12]))
+                            .arg(QString::number(data[13]))
+                            .arg(QString::number(data[14]))
+                            .arg(QString::number(data[15]))
+                            .arg(QString::number(data[16]))
+                            .arg(QString::number(data[17])));
+    stopWaitingCmdTransmit();
+}
+
+void MainWindow::getSettings_timeoutSlot()
+{
+    getSettings_timer.stop();
+}
+
+/*
+ *
+ */
+void MainWindow::stopWaitingCmdTransmit_timeoutSlot()
+{
+    wait_timer.stop();
+    this->setEnabled(true);
+    showStatusMessage("Готово");
+}
+
+void MainWindow::caliration_timeoutSlot()
+{
+    calibration_timer.stop();
+    if(symbolsFromPort.at(0) == 0)
+    {
+        showStatusMessage("Калибровка успешно завершена");
+    } else {
+        showStatusMessage(tr("Ошибка %1, смотрите AN366REV2").arg(symbolsFromPort.at(0)));
+    }
+}
+
+void MainWindow::getEvent_timeoutSlot()
+{
+    getEvents_timer.stop();
+
+    if(symbolsFromPort.isEmpty()) return;
+
+    uint32_t seconds = 0, duration = 0;
+    uint8_t info = 0, event = 0;
+
+    int index = 0;
+    int count = 1;
+    int size_of_symbols = symbolsFromPort.size() - 1;
+
+    while(index + 11 <= size_of_symbols)
+    {
+        seconds = 0;
+        info = 0;
+        event = 0;
+        duration = 0;
+        while(symbolsFromPort.at(index) != ':')
+        {
+            //парсим секунды с 2000 года
+            for(int i = 3; i >= 0; i--)
+            {
+                if( i == 0)
+                {
+                    seconds = ( seconds + symbolsFromPort.at(i));
+                } else {
+                    seconds = ( seconds + symbolsFromPort.at(i)) << 8;
+                }
+                index++;
+            }
+
+            //поле информации
+            info = symbolsFromPort.at(index++);
+
+            //длительность
+            for(int i = 3; i >= 0; i--)
+            {
+                if( i == 0)
+                {
+                    duration = (duration + symbolsFromPort.at(i));
+                } else {
+                    duration = (duration + symbolsFromPort.at(i)) << 8;
+                }
+                index++;
+            }
+            //номер события
+            event = symbolsFromPort.at(index++);
+        }
+        index++;
+        ui->eventOutput->append(tr("%1: %2 -> %3 -> %4 ->%5\n").arg(count).arg(event).arg(seconds).arg(info).arg(duration));
+        count++;
+    }
+
 }
 
 //==================================================================
@@ -277,6 +527,34 @@ void MainWindow::setPort(QSerialPort *port)
 }
 
 /*
+ *
+ */
+void MainWindow::waitForCmdTransmit(bool withTimer, int timeout)
+{
+    showStatusMessage("Подождите...");
+    this->setEnabled(false);
+    if(withTimer)
+        wait_timer.start(timeout);
+}
+
+/*
+ *
+ */
+void MainWindow::stopWaitingCmdTransmit()
+{
+    this->setEnabled(true);
+    showStatusMessage("Готово");
+}
+
+/*
+ *
+ */
+void MainWindow::setPassType(uint8_t passType)
+{
+    _passType = passType;
+}
+
+/*
  * Открытие порта. При неудаче TODO
  */
 bool MainWindow::openPort()
@@ -298,6 +576,10 @@ void MainWindow::setSlots()
     connect(mainWindowPort, SIGNAL(readyRead()), this, SLOT(portReceive()));
     connect(&getTime_timer, SIGNAL(timeout()), this, SLOT(getTime_timeoutSlot()));
     connect(&getData_timer, SIGNAL(timeout()), this, SLOT(getData_timeoutSlot()));
+    connect(&getSettings_timer, SIGNAL(timeout()), this, SLOT(getSettings_timeoutSlot()));
+    connect(&wait_timer, SIGNAL(timeout()), this, SLOT(stopWaitingCmdTransmit_timeoutSlot()));
+    connect(&calibration_timer, SIGNAL(timeout()), this, SLOT(caliration_timeoutSlot()));
+    connect(&getEvents_timer, SIGNAL(timeout()), this, SLOT(getEvent_timeoutSlot()));
 }
 
 double MainWindow::convertFromHexToDouble(int indexNumber)
@@ -337,3 +619,4 @@ double MainWindow::convertFromHexToDouble(int indexNumber)
 
     return output;
 }
+

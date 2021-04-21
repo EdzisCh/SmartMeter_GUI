@@ -18,6 +18,7 @@ SOURCES += \
 
 HEADERS += \
     connectwindow.h \
+    definitions.h \
     mainwindow.h
 
 FORMS += \

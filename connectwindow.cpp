@@ -35,12 +35,12 @@ ConnectWindow::ConnectWindow(QWidget *parent) :
         this->ui->baudRateComboBox->addItem("115200");
     }
     /**/
-    ui->password->setText("connect");
+    ui->password->setText("123");
     /**/
     ui->password->setEnabled(false);
     ui->logInBtn->setEnabled(false);
     ui->connectBtn->setFocus();
-    setWindowTitle("Connect");
+    setWindowTitle("Подключиться");
     connect(port, SIGNAL(readyRead()), this, SLOT(portReceive()));
     connect(&timer, SIGNAL(timeout()), this, SLOT(timeoutHandle()));
     showMessage("");
@@ -53,7 +53,13 @@ ConnectWindow::ConnectWindow(QWidget *parent) :
 ConnectWindow::~ConnectWindow()
 {
     if(this->port->isOpen())
+    {
+        QByteArray byteData;
+        byteData.append("end_connection\r\n");
+        this->port->write(byteData);
         this->port->close();
+    }
+
     delete ui;
 }
 
@@ -65,6 +71,14 @@ ConnectWindow::~ConnectWindow()
 QSerialPort* ConnectWindow::getPort()
 {
     return this->port;
+}
+
+/*
+ * Сеттер для порта
+ */
+void ConnectWindow::setPort(QSerialPort* port)
+{
+    this->port = port;
 }
 
 //==================================================================
@@ -103,9 +117,9 @@ void ConnectWindow::on_connectBtn_clicked()
 
     if(!this->port->open(QIODevice::ReadWrite))
     {
-        showMessage(tr("Can`t open %1").arg(this->ui->portNameComboBox->currentText()));
+        showMessage(tr("Невозможно открыть %1").arg(this->ui->portNameComboBox->currentText()));
     } else {
-        showMessage(tr("Connected to %1").arg(this->ui->portNameComboBox->currentText()));
+        showMessage(tr("Подключенно к %1").arg(this->ui->portNameComboBox->currentText()));
         ui->connectBtn->setEnabled(false);
         ui->logInBtn->setEnabled(true);
         ui->password->setEnabled(true);
@@ -121,16 +135,19 @@ void ConnectWindow::on_logInBtn_clicked()
 {
     if(!port->isOpen()) return;
 
-    QString data(ui->password->text());
+    QString data = "connect:";
 
-    if(data.isEmpty())
+    if(ui->password->text().isEmpty())
     {
-        showMessage("No input data");
+        showMessage("Введите пароль");
         return;
     }
+    data += ui->password->text();//
     data += "\r\n";
+
     QByteArray byteData;
     byteData.append(data.toLocal8Bit());
+
     this->port->write(byteData);
     if(!timer.isActive())
         timer.start(1000);
@@ -138,17 +155,25 @@ void ConnectWindow::on_logInBtn_clicked()
 
 void ConnectWindow::timeoutHandle()
 {
-    if(dataFromPort.compare(ACKNOWLEGE) != 0)
+    timer.stop();
+    if(dataFromPort.compare(PASS_INCORRECT) == 0)
     {
-        showMessage("Password incorrect");
-        timer.stop();
+        showMessage("Неправильный пароль");
+        return;
+    } else if(dataFromPort.compare(ACKNOWLEGE_FIRST_PASS) != 0 && dataFromPort.compare(ACKNOWLEGE_SECOND_PASS) != 0)
+    {
+        showMessage("Что-то пошло не так...");
         return;
     }
 
-    showMessage("Logged in");
-    timer.stop();
+    showMessage("Вход выполнен");
     port->close();
-    if(!static_cast<MainWindow *>(this->parent())->runMainWindow(port))
+
+    uint8_t passType = 0;
+    if(dataFromPort.compare(ACKNOWLEGE_FIRST_PASS) == 0) passType = 1;
+    if(dataFromPort.compare(ACKNOWLEGE_SECOND_PASS) == 0) passType = 2;
+
+    if(!static_cast<MainWindow *>(this->parent())->runMainWindow(port, passType))
     {
         port->open(QIODevice::ReadWrite);
         showMessage("Error");
@@ -172,18 +197,24 @@ void ConnectWindow::on_password_returnPressed()
  */
 void ConnectWindow::closeEvent(QCloseEvent *event)
 {
-    event->ignore();
-    if (QMessageBox::Yes == QMessageBox::question(this, "Закрыть?",
-                          "Уверены?",
-                          QMessageBox::Yes|QMessageBox::No))
-    {
-        event->accept();
+    static_cast<MainWindow *>(this->parent())->close();
+//    //event->ignore();
+//    if (QMessageBox::Yes == QMessageBox::question(this, "Закрытие",
+//                          "Завершить работу?",
+//                          QMessageBox::Yes|QMessageBox::No))
+//    {
+//        if(!this->port->isOpen())
+//            this->port->open(QIODevice::ReadWrite);
 
-        if(port->isOpen())
-            port->close();
+//        QByteArray byteData;
+//        byteData.append("end_connection\r\n");
+//        this->port->write(byteData);
 
-        static_cast<MainWindow *>(this->parent())->close();
-    }
+//        this->port->close();
+
+//        event->accept();
+//        static_cast<MainWindow *>(this->parent())->close();
+//    }
 
 }
 
@@ -194,7 +225,7 @@ void ConnectWindow::closeEvent(QCloseEvent *event)
  */
 void ConnectWindow::showMessage(const QString &message)
 {
-    QString statusMessage = "Status: " + message;
+    QString statusMessage = "Статус: " + message;
     status->setText(statusMessage);
 }
 

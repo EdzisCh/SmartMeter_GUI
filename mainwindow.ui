@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>308</width>
-    <height>376</height>
+    <width>313</width>
+    <height>412</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -26,11 +26,11 @@
       <x>0</x>
       <y>0</y>
       <width>321</width>
-      <height>331</height>
+      <height>371</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="Data">
      <property name="accessibleDescription">
@@ -99,7 +99,7 @@
       </layout>
      </widget>
     </widget>
-    <widget class="QWidget" name="Tarrifs">
+    <widget class="QWidget" name="Settings">
      <attribute name="title">
       <string>Настройки</string>
      </attribute>
@@ -108,8 +108,8 @@
        <rect>
         <x>0</x>
         <y>4</y>
-        <width>301</width>
-        <height>305</height>
+        <width>311</width>
+        <height>370</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -152,13 +152,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="setDateTimeBtn">
-               <property name="text">
-                <string>Установить время и дату</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QPushButton" name="setTimeBtn">
                <property name="text">
                 <string>Установить время</string>
@@ -195,17 +188,131 @@
             <widget class="QDateTimeEdit" name="dateTimeEdit"/>
            </item>
            <item>
-            <spacer name="verticalSpacer">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
+            <widget class="QPushButton" name="onOffDaylightSavingBtn">
+             <property name="text">
+              <string>On/Off сезонное время</string>
              </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="changeToWinterBtn">
+             <property name="text">
+              <string>Перевести на зимнее</string>
              </property>
-            </spacer>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="changeToSummerBtn">
+             <property name="text">
+              <string>Перевести на летнее</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_12">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_9">
+             <item>
+              <widget class="QLineEdit" name="firstPassInput"/>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="secondPassInput"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_10">
+             <item>
+              <widget class="QPushButton" name="setFirstBtn">
+               <property name="text">
+                <string>Установить пароль №1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="setSecondPassBtn">
+               <property name="text">
+                <string>Установить пароль №2</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="getPassesBtn">
+               <property name="text">
+                <string>Узнать пароли</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <property name="rightMargin">
+            <number>25</number>
+           </property>
+           <item>
+            <widget class="QTextBrowser" name="textBrowser"/>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_11">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="resetMeterBtn">
+               <property name="text">
+                <string>Сброс счетчика</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="calibrateBtn">
+               <property name="text">
+                <string>Калибровка счетчика</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="getSettingsBtn">
+               <property name="text">
+                <string>Получить настройки</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </item>
@@ -221,56 +328,147 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
-           <item>
-            <widget class="QLineEdit" name="settingsInput"/>
-           </item>
-           <item>
-            <widget class="QTextBrowser" name="settingsOutput"/>
-           </item>
-          </layout>
+          <layout class="QVBoxLayout" name="verticalLayout_6"/>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_7">
-           <item>
-            <widget class="QPushButton" name="getMeterSettigs">
-             <property name="text">
-              <string>Настройки счетчика</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_2">
-             <property name="text">
-              <string>Усановить усление I</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_3">
-             <property name="text">
-              <string>Усановить усление U</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_4">
-             <property name="text">
-              <string>Усановить усление g</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QVBoxLayout" name="verticalLayout_7"/>
          </item>
         </layout>
        </item>
       </layout>
      </widget>
     </widget>
-    <widget class="QWidget" name="Settings">
+    <widget class="QWidget" name="Tariffs">
      <attribute name="title">
       <string>Тарифы</string>
      </attribute>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>281</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_13">
+       <item>
+        <widget class="QTextBrowser" name="tariffOutput"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="getTariffDataBtn">
+           <property name="text">
+            <string>Получить данные</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="TER">
+     <attribute name="title">
+      <string>Накопления</string>
+     </attribute>
+     <widget class="QWidget" name="layoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>281</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_14">
+       <item>
+        <widget class="QTextBrowser" name="TEROutput"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <spacer name="getTERDataBtn">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_2">
+           <property name="text">
+            <string>Получить данные</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="Events">
+     <attribute name="title">
+      <string>Жарнал событий</string>
+     </attribute>
+     <widget class="QWidget" name="layoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>281</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_15">
+       <item>
+        <widget class="QTextBrowser" name="eventOutput"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="getEventDataBtn">
+           <property name="text">
+            <string>Получить данные</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -279,7 +477,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>308</width>
+     <width>313</width>
      <height>21</height>
     </rect>
    </property>

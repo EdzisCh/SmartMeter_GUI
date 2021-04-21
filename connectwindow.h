@@ -5,8 +5,11 @@
 #include <QSerialPort>
 #include <QTimer>
 #include <QLabel>
+#include <QDebug>
 
-const QString ACKNOWLEGE = "ack\r\n";
+const QString ACKNOWLEGE_FIRST_PASS = "1ack\r\n";
+const QString ACKNOWLEGE_SECOND_PASS = "2ack\r\n";
+const QString PASS_INCORRECT = "!ack\r\n";
 
 namespace Ui {
 class ConnectWindow;
@@ -20,6 +23,7 @@ public:
     explicit ConnectWindow(QWidget *parent = nullptr);
     ~ConnectWindow();
     QSerialPort* getPort();
+    void setPort(QSerialPort* port);
 
 private slots:
     void on_connectBtn_clicked();
